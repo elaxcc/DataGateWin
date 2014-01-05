@@ -16,48 +16,46 @@ server_connection::server_connection(int socket)
 server_connection::~server_connection()
 {
 	full_id_.clear();
+	data_buffer_.clear();
 }
 
 int server_connection::process_events(short int polling_events)
 {
-	if (polling_events == Net::c_poll_event_in)
+	int recv_result = Net::error_no_;
+
+	if (polling_events & Net::c_poll_event_in)
 	{
-		char login_data_buffer[1024];
-		int incoming_data_size = 0;
-		int result = Net::recv_data(get_socket(), login_data_buffer,
-			sizeof(login_data_buffer), &incoming_data_size);
-
-		if (result != Net::error_no_)
+		while (recv_result == Net::error_no_)
 		{
-			// some problems occurs
-			return result;
-		}
+			char login_data_buffer[4096];
+			int incoming_data_size = 0;
 
-		data_buffer_.insert(data_buffer_.end(), login_data_buffer,
-			login_data_buffer + incoming_data_size);
+			recv_result = Net::recv_data(get_socket(), login_data_buffer,
+				sizeof(login_data_buffer), &incoming_data_size);
+
+			if (incoming_data_size > 0)
+			{
+				data_buffer_.insert(data_buffer_.end(), login_data_buffer,
+					login_data_buffer + incoming_data_size);
+			}
+		}
 
 		if (status_ == status_not_logined)
 		{
 			// try to login
 
-			if (data_buffer_.size() < LC_LONIG_PACKET_LEN)
-			{
-				// didn't get all login data, wait for next recv()
-				return Net::error_no_;
-			}
-			else
+			// if get all login data, wait for next recv()
+			if (data_buffer_.size() >= LC_LONIG_PACKET_LEN)
 			{
 				//!fixme check full ID in database
 				// if it wrong close connection, else login is ok
 				
 				full_id_.insert(full_id_.begin(), data_buffer_.begin(),
-					data_buffer_.begin() + LC_LONIG_PACKET_LEN)
+					data_buffer_.begin() + LC_LONIG_PACKET_LEN);
 				data_buffer_.erase(data_buffer_.begin(),
 					data_buffer_.begin() + LC_LONIG_PACKET_LEN);
 
 				status_ = status_logined;
-				
-				return Net::error_no_;
 			}
 		}
 		else
@@ -66,6 +64,11 @@ int server_connection::process_events(short int polling_events)
 		}
 	}
 
+	if (recv_result == Net::error_connection_is_closed_)
+	{
+		// some problems occurs
+		return recv_result;
+	}
 	return Net::error_no_;
 }
 
