@@ -11,5 +11,8 @@
 #include <tchar.h>
 
 #include <vector>
+#include <string>
+
+#include <libpq-fe.h>
 
 // TODO: reference additional headers your program requires here

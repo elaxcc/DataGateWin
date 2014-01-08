@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="D:\ProjectsGit\boost"
+				AdditionalIncludeDirectories="&quot;C:\Program Files\PostgreSQL\9.3\include&quot;;D:\ProjectsGit\boost"
 				AdditionalUsingDirectories=""
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
@@ -62,8 +62,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="libpq.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="D:\ProjectsGit\boost\stage\lib"
+				AdditionalLibraryDirectories="&quot;C:\Program Files\PostgreSQL\9.3\lib&quot;;&quot;C:\Program Files\PostgreSQL\9.3\bin&quot;;D:\ProjectsGit\boost\stage\lib"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -174,6 +175,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\DataBase.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\DataGateWin.cpp"
 				>
 			</File>
@@ -218,6 +223,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\StringService.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\ThreadWithStop.cpp"
 				>
 			</File>
@@ -231,6 +240,10 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\DataBase.h"
+				>
+			</File>
 			<File
 				RelativePath=".\HighRankClients.h"
 				>
@@ -257,6 +270,10 @@
 			</File>
 			<File
 				RelativePath=".\stdafx.h"
+				>
+			</File>
+			<File
+				RelativePath=".\StringService.h"
 				>
 			</File>
 			<File

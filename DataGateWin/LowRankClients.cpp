@@ -2,13 +2,15 @@
 
 #include "LowRankClients.h"
 #include "Protocol.h"
+#include "DataBase.h"
 
 namespace low_rank_clients
 {
 
-server_connection::server_connection(int socket)
+server_connection::server_connection(data_base *db, int socket)
 	: Net::connection(socket, Net::c_poll_event_in)
 	, status_(status_not_logined)
+	, db_(db)
 {
 
 }
@@ -47,13 +49,16 @@ int server_connection::process_events(short int polling_events)
 			// if get all login data, wait for next recv()
 			if (data_buffer_.size() >= LC_LONIG_PACKET_LEN)
 			{
-				//!fixme check full ID in database
+				// check full ID in database
 				// if it wrong close connection, else login is ok
 				
 				full_id_.insert(full_id_.begin(), data_buffer_.begin(),
 					data_buffer_.begin() + LC_LONIG_PACKET_LEN);
 				data_buffer_.erase(data_buffer_.begin(),
 					data_buffer_.begin() + LC_LONIG_PACKET_LEN);
+
+				bool is_exist = db_->check_lc_id(std::string(full_id_.front(), LC_ID_LEN),
+					std::string(&full_id_[LC_ID_LEN], USER_ID_LEN));
 
 				status_ = status_logined;
 			}
@@ -92,9 +97,11 @@ void server_connection::data_parser::parse(
 
 ///////////////////////////////////////////////////////////////////////////
 
-server::server(Net::net_manager *net_manager,
+server::server(data_base *db,
+	Net::net_manager *net_manager,
 	int port, bool nonblocking, bool no_nagle_delay)
 	: Net::server(net_manager, port, nonblocking, no_nagle_delay)
+	, db_(db)
 {
 }
 
@@ -104,7 +111,7 @@ server::~server()
 
 Net::i_net_member* server::create_connection(int socket)
 {
-	server_connection *new_connection = new server_connection(socket);
+	server_connection *new_connection = new server_connection(db_, socket);
 	return new_connection;
 }
 
