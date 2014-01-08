@@ -103,7 +103,7 @@ void local_communicator_manager::destroy_link(
 		std::map<int, i_local_communicator*>::iterator first_iter =
 			members_.find(link_iter->second.first_);
 		first_iter->second->links_cnt_--;
-		if (first_iter->second->links_cnt_ == 0)
+		if (first_iter->second || first_iter->second->links_cnt_ == 0)
 		{
 			members_.erase(first_iter);
 		}
@@ -111,7 +111,7 @@ void local_communicator_manager::destroy_link(
 		std::map<int, i_local_communicator*>::iterator second_iter =
 			members_.find(link_iter->second.second_);
 		second_iter->second->links_cnt_--;
-		if (second_iter->second->links_cnt_ == 0)
+		if (second_iter->second || second_iter->second->links_cnt_ == 0)
 		{
 			members_.erase(second_iter);
 		}
@@ -175,7 +175,7 @@ void local_communicator_manager::process()
 		}
 		else
 		{
-			members_.erase(member_iter);
+			destroy_link(link_iter->first);
 		}
 	}
 
