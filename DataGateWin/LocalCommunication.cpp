@@ -22,10 +22,10 @@ int i_local_communicator::get_id() const
 	return id_;
 }
 
-void i_local_communicator::send_message(const std::string& link,
+bool i_local_communicator::send_message(const std::string& link,
 	const std::vector<char>& message)
 {
-	manager_->add_message(link, id_, message);
+	return manager_->add_message(link, id_, message);
 }
 
 void i_local_communicator::set_id(int id)
@@ -120,7 +120,7 @@ void local_communicator_manager::destroy_link(
 	}
 }
 
-void local_communicator_manager::add_message(
+bool local_communicator_manager::add_message(
 	const std::string& link, int source_id,
 	const std::vector<char>& message)
 {
@@ -128,7 +128,7 @@ void local_communicator_manager::add_message(
 		links_list_.find(link);
 	if (link_iter == links_list_.end())
 	{
-		return;
+		return false;
 	}
 
 	messages_.push_back(
@@ -136,6 +136,8 @@ void local_communicator_manager::add_message(
 			link,
 			source_id,
 			message));
+
+	return true;
 }
 
 void local_communicator_manager::process()

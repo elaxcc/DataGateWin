@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
 #include "LowRankClients.h"
+#include "HighRankClients.h"
 #include "Protocol.h"
 #include "DataBase.h"
 
@@ -8,20 +9,22 @@ namespace low_rank_clients
 {
 
 server_connection::server_connection(data_base *db,
+	high_rank_clients::server *high_rank_server,
 	Net::local_communicator_manager *local_comm_manager,
-	const std::string& local_communication_link, int socket)
+	int socket)
 	: Net::connection(socket, Net::c_poll_event_in)
 	, Net::i_local_communicator(local_comm_manager)
 	, status_(status_not_logined)
 	, db_(db)
-	, local_communication_link_(local_communication_link)
+	, high_rank_server_(high_rank_server)
+	, local_comm_manager_(local_comm_manager)
 {
-
 }
 
 server_connection::~server_connection()
 {
-	full_id_.clear();
+	lc_id_.clear();
+	hc_id_.clear();
 	data_buffer_.clear();
 }
 
@@ -55,17 +58,23 @@ int server_connection::process_events(short int polling_events)
 			{
 				// check full ID in database
 				// if it wrong close connection, else login is ok
-				
-				full_id_.insert(full_id_.begin(), data_buffer_.begin(),
-					data_buffer_.begin() + LC_LONIG_PACKET_LEN);
+
+				hc_id_.insert(hc_id_.begin(), data_buffer_.begin(),
+					data_buffer_.begin() + USER_ID_LEN);
+				lc_id_.insert(lc_id_.begin(), &(data_buffer_[USER_ID_LEN - 1]),
+					&(data_buffer_[USER_ID_LEN - 1]) + LC_ID_LEN);
+
 				data_buffer_.erase(data_buffer_.begin(),
 					data_buffer_.begin() + LC_LONIG_PACKET_LEN);
 
-				bool is_exist = db_->check_lc_id(std::string(full_id_.front(), LC_ID_LEN),
-					std::string(&full_id_[LC_ID_LEN], USER_ID_LEN));
+				bool is_exist = db_->check_lc_id(std::string(hc_id_.front(), USER_ID_LEN),
+					std::string(lc_id_.front(), LC_ID_LEN));
 
 				if (is_exist)
 				{
+					link_to_hs_ = std::string(hc_id_.front(), hc_id_.size()) +
+						std::string(lc_id_.front(), lc_id_.size());
+					local_comm_manager_->create_link(link_to_hs_, this, high_rank_server_);
 					status_ = status_logined;
 				}
 				else
@@ -77,7 +86,15 @@ int server_connection::process_events(short int polling_events)
 		}
 		else
 		{
-			//!fixme send data to HC
+			// send data to HC
+
+			bool send_result = high_rank_server_->send_message(link_to_hs_, data_buffer_);
+			if (!send_result)
+			{
+				//!fixme save data to DB
+			}
+
+			data_buffer_.clear();
 		}
 	}
 
@@ -97,32 +114,16 @@ int server_connection::process_message(const std::string& link,
 
 ///////////////////////////////////////////////////////////////////////////
 
-server_connection::data_parser::data_parser()
-{
-
-}
-
-server_connection::data_parser::~data_parser()
-{
-	buffer_.clear();
-}
-
-void server_connection::data_parser::parse(
-	char *data, unsigned int data_len)
-{
-	buffer_.insert(buffer_.end(), data, data + data_len);
-}
-
-///////////////////////////////////////////////////////////////////////////
-
 const std::string server::c_local_communication_prefix_ = "lc:";
 
 server::server(data_base *db,
-	Net::local_communicator_manager *local_comm_manager,
 	Net::net_manager *net_manager,
+	high_rank_clients::server *high_rank_server,
+	Net::local_communicator_manager *local_comm_manager,
 	int port, bool nonblocking, bool no_nagle_delay)
 	: Net::server(net_manager, port, nonblocking, no_nagle_delay)
 	, db_(db)
+	, high_rank_server_(high_rank_server)
 	, local_comm_manager_(local_comm_manager)
 {
 }
@@ -133,9 +134,9 @@ server::~server()
 
 Net::i_net_member* server::create_connection(int socket)
 {
-	//server_connection *new_connection = new server_connection(
-	//	db_, local_comm_manager_, socket);
-	return 0;//new_connection;
+	server_connection *new_connection = new server_connection(
+		db_, high_rank_server_, local_comm_manager_, socket);
+	return new_connection;
 }
 
 } // low_rank_clients

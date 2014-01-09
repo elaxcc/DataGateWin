@@ -3,6 +3,7 @@
 
 #include "NetCommon.h"
 #include "LocalCommunication.h"
+#include "HighRankClients.h"
 
 class data_base;
 
@@ -13,8 +14,9 @@ namespace low_rank_clients
 {
 public:
 	server_connection(data_base *db,
+		high_rank_clients::server *high_rank_server,
 		Net::local_communicator_manager *local_comm_manager,
-		const std::string& local_communication_link, int socket);
+		int socket);
 	~server_connection();
 
 public: // Net::connection
@@ -31,24 +33,15 @@ private:
 		status_logined = 2
 	};
 
-	class data_parser
-	{
-	public:
-		data_parser();
-		~data_parser();
-
-		void parse(char *data, unsigned int data_len);
-
-	private:
-		std::vector<char> buffer_;
-	};
-
 private:
-	std::vector<char> full_id_;
+	std::vector<char> lc_id_;
+	std::vector<char> hc_id_;
 	std::vector<char> data_buffer_;
 	status status_;
 	data_base *db_;
-	std::string local_communication_link_;
+	high_rank_clients::server *high_rank_server_;
+	Net::local_communicator_manager *local_comm_manager_;
+	std::string link_to_hs_;
 };
 
 class server : public Net::server
@@ -58,8 +51,9 @@ public:
 
 public:
 	server(data_base *db,
-		Net::local_communicator_manager *local_comm_manager,
 		Net::net_manager *net_manager,
+		high_rank_clients::server *high_rank_server,
+		Net::local_communicator_manager *local_comm_manager,
 		int port, bool nonblocking, bool no_nagle_delay);
 	~server();
 
@@ -68,6 +62,7 @@ public: // Net::server
 
 private:
 	data_base *db_;
+	high_rank_clients::server *high_rank_server_;
 	Net::local_communicator_manager *local_comm_manager_;
 };
 

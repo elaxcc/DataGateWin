@@ -46,7 +46,7 @@ public:
 	 * [in] message - message for transmission
 	 * retval - transmission result
 	 */
-	void send_message(const std::string& link,
+	bool send_message(const std::string& link,
 		const std::vector<char>& message);
 
 private:
@@ -98,13 +98,6 @@ public:
 	 */
 	void process();
 
-private:
-	/*!
-	 * [in] member - communicator pointer for adding
-	 * retval - new added communicator ID
-	 */
-	void add_communicator(i_local_communicator *member);
-
 	/*!
 	 * Add message for sending
 	 * [in] source_id - message source ID
@@ -112,8 +105,15 @@ private:
 	 * [in] message - message for transmission
 	 * retval error code
 	 */
-	void add_message(const std::string& link, int source_id,
+	bool add_message(const std::string& link, int source_id,
 		const std::vector<char>& message);
+
+private:
+	/*!
+	 * [in] member - communicator pointer for adding
+	 * retval - new added communicator ID
+	 */
+	void add_communicator(i_local_communicator *member);
 
 private:
 	friend class i_local_communicator;
