@@ -203,6 +203,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Protocol.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration

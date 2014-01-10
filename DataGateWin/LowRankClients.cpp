@@ -109,6 +109,7 @@ int server_connection::process_events(short int polling_events)
 int server_connection::process_message(const std::string& link,
 	const std::vector<char>& data)
 {
+	int send_result = Net::send_data(get_socket(), (char *) &data[0], data.size());
 	return 0;
 }
 

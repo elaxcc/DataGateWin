@@ -15,4 +15,6 @@
 
 #include <libpq-fe.h>
 
+#include <boost/cstdint.hpp>
+
 // TODO: reference additional headers your program requires here

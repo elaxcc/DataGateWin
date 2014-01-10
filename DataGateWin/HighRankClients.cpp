@@ -19,23 +19,75 @@ server_connection::server_connection(data_base *db, int socket,
 
 server_connection::~server_connection()
 {
-	id_.clear();
+	hc_id_.clear();
 	data_buffer_.clear();
 }
 
 int server_connection::process_events(short int polling_events)
 {
+	int recv_result = Net::error_no_;
+
 	if (polling_events & Net::c_poll_event_in)
 	{
+		while (recv_result == Net::error_no_)
+		{
+			char login_data_buffer[4096];
+			int incoming_data_size = 0;
+
+			recv_result = Net::recv_data(get_socket(), login_data_buffer,
+				sizeof(login_data_buffer), &incoming_data_size);
+
+			if (incoming_data_size > 0)
+			{
+				data_buffer_.insert(data_buffer_.end(), login_data_buffer,
+					login_data_buffer + incoming_data_size);
+			}
+		}
+
 		if (status_ == status_not_logined)
 		{
-			
+			// if get all login data, wait for next recv()
+			if (data_buffer_.size() >= USER_ID_LEN)
+			{
+				hc_id_.insert(hc_id_.begin(), data_buffer_.begin(),
+					data_buffer_.begin() + USER_ID_LEN);
+
+				data_buffer_.erase(data_buffer_.begin(),
+					data_buffer_.begin() + USER_ID_LEN);
+
+				bool is_exist = db_->check_user_id(std::string(hc_id_.front(), USER_ID_LEN));
+
+				if (is_exist)
+				{
+					own_server_->register_client(std::string(hc_id_.front(), hc_id_.size()), this);
+					status_ = status_logined;
+				}
+				else
+				{
+					close();
+					return Net::error_connection_is_closed_;
+				}
+			}
 		}
 		else
 		{
+			// send data to lc
+			
+			if (data_buffer_.size() >= LC_ID_LEN)
+			{
+				std::string link_to_lc = std::string(hc_id_.front(), hc_id_.size()) +
+					std::string(data_buffer_.front(), LC_ID_LEN);
+				data_buffer_.erase(data_buffer_.begin(), data_buffer_.begin() + LC_ID_LEN);
+				own_server_->send_message(link_to_lc, data_buffer_);
+			}
 		}
 	}
 
+	if (recv_result == Net::error_connection_is_closed_)
+	{
+		own_server_->unregister_client(std::string(hc_id_.front(), hc_id_.size()));
+		return recv_result;
+	}
 	return Net::error_no_;
 }
 

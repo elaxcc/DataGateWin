@@ -9,15 +9,15 @@ namespace
 
 const std::string query_connection_db = "dbname={dbname} host={host} user={user} password={password}";
 
-const std::string tag_dbname = "{dbname}";
-const std::string tag_host = "{host}";
-const std::string tag_user = "{user}";
-const std::string tag_password = "{password}";
+const std::string tag_db_name = "{dbname}";
+const std::string tag_db_host = "{host}";
+const std::string tag_db_user = "{user}";
+const std::string tag_db_password = "{password}";
 
-const std::string dbname = "data_gate";
-const std::string host = "localhost";
-const std::string user = "postgres";
-const std::string password = "12345";
+const std::string db_name = "data_gate";
+const std::string db_host = "localhost";
+const std::string db_user = "postgres";
+const std::string db_password = "12345";
 
 const std::string query_check_user_id =
 	"SELECT * "
@@ -28,8 +28,15 @@ const std::string query_check_low_rank_client =
 	"FROM low_clients "
 	"WHERE low_clients.user_id = '{checked_user_id}' AND low_clients.client_id = '{checked_lc_id}'";
 
+const std::string query_get_user_id_by_login =
+	"SELECT users.user_id "
+	"FROM users "
+	"WHERE users.login = '{login}' AND users.passwd = '{passwd}'";
+
 const std::string tag_checked_user_id = "{checked_user_id}";
 const std::string tag_checked_lc_id = "{checked_lc_id}";
+const std::string tag_login = "{login}";
+const std::string tag_passwd = "{passwd}";
 
 } // namespace
 
@@ -40,10 +47,10 @@ data_base::data_base(const std::string& dbname,
 	: is_connected_(false)
 {
 	std::string connection_query = query_connection_db;
-	StringService::Replace(connection_query, tag_dbname, dbname);
-	StringService::Replace(connection_query, tag_host, host);
-	StringService::Replace(connection_query, tag_user, user);
-	StringService::Replace(connection_query, tag_password, password);
+	StringService::Replace(connection_query, tag_db_name, db_name);
+	StringService::Replace(connection_query, tag_db_host, db_host);
+	StringService::Replace(connection_query, tag_db_user, db_user);
+	StringService::Replace(connection_query, tag_db_password, db_password);
 
 	conn = PQconnectdb(connection_query.c_str());
 
@@ -63,7 +70,7 @@ bool data_base::check_user_id(const std::string& user_id)
 	std::string query = query_check_user_id;
 	StringService::Replace(query, tag_checked_user_id, user_id);
 
-	res = PQexec(conn, query_check_user_id.c_str());
+	res = PQexec(conn, query.c_str());
 
 	if (PQresultStatus(res) != PGRES_TUPLES_OK)
 	{
@@ -83,11 +90,11 @@ bool data_base::check_user_id(const std::string& user_id)
 
 bool data_base::check_lc_id(const std::string& user_id, const std::string& lc_id)
 {
-	std::string query = query_check_user_id;
+	std::string query = query_check_low_rank_client;
 	StringService::Replace(query, tag_checked_user_id, user_id);
 	StringService::Replace(query, tag_checked_lc_id, lc_id);
 
-	res = PQexec(conn, query_check_user_id.c_str());
+	res = PQexec(conn, query.c_str());
 
 	if (PQresultStatus(res) != PGRES_TUPLES_OK)
 	{
@@ -103,4 +110,30 @@ bool data_base::check_lc_id(const std::string& user_id, const std::string& lc_id
 		return true;
 	}
 	return false;
+}
+
+std::string data_base::get_user_id_by_login(
+	const std::string& login, const std::string& passwd)
+{
+	std::string query = query_get_user_id_by_login;
+	StringService::Replace(query, tag_login, login);
+	StringService::Replace(query, tag_passwd, passwd);
+
+	res = PQexec(conn, query.c_str());
+
+	if (PQresultStatus(res) != PGRES_TUPLES_OK)
+	{
+		return std::string();
+	}
+
+	int rec_count = PQntuples(res);
+
+	if (rec_count == 1)
+	{
+		std::string user_id = PQgetvalue(res, 0, 0);
+		PQclear(res);
+		return user_id;
+	}
+	PQclear(res);
+	return std::string();
 }

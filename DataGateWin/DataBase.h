@@ -14,6 +14,7 @@ public:
 
 	bool check_user_id(const std::string& user_id);
 	bool check_lc_id(const std::string& user_id, const std::string& lc_id);
+	std::string get_user_id_by_login(const std::string& login, const std::string& passwd);
 
 private:
 	PGconn *conn;

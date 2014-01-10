@@ -28,7 +28,7 @@ private:
 	};
 
 private:
-	std::vector<char> id_;
+	std::vector<char> hc_id_;
 	status status_;
 	std::vector<char> data_buffer_;
 	data_base *db_;
