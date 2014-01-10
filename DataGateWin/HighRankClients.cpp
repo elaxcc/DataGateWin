@@ -8,6 +8,13 @@
 namespace high_rank_clients
 {
 
+namespace
+{
+
+unsigned int login_passwd_crc_len_size = 4;
+
+}
+
 server_connection::server_connection(data_base *db, int socket,
 	server *own_server)
 	: Net::connection(socket, Net::c_poll_event_in)
@@ -19,7 +26,6 @@ server_connection::server_connection(data_base *db, int socket,
 
 server_connection::~server_connection()
 {
-	hc_id_.clear();
 	data_buffer_.clear();
 }
 
@@ -47,26 +53,21 @@ int server_connection::process_events(short int polling_events)
 		if (status_ == status_not_logined)
 		{
 			// if get all login data, wait for next recv()
-			if (data_buffer_.size() >= USER_ID_LEN)
+			login_parser_.parse(data_buffer_);
+			data_buffer_.clear();
+
+			if (login_parser_.is_complete())
 			{
-				hc_id_.insert(hc_id_.begin(), data_buffer_.begin(),
-					data_buffer_.begin() + USER_ID_LEN);
+				hc_id_ = db_->get_user_id_by_login(
+					login_parser_.get_login(), login_parser_.get_passwd());
 
-				data_buffer_.erase(data_buffer_.begin(),
-					data_buffer_.begin() + USER_ID_LEN);
-
-				bool is_exist = db_->check_user_id(std::string(hc_id_.front(), USER_ID_LEN));
-
-				if (is_exist)
+				if (hc_id_.empty())
 				{
-					own_server_->register_client(std::string(hc_id_.front(), hc_id_.size()), this);
-					status_ = status_logined;
-				}
-				else
-				{
-					close();
 					return Net::error_connection_is_closed_;
 				}
+
+				status_ = status_logined;
+				own_server_->register_client(hc_id_, this);
 			}
 		}
 		else
@@ -75,7 +76,7 @@ int server_connection::process_events(short int polling_events)
 			
 			if (data_buffer_.size() >= LC_ID_LEN)
 			{
-				std::string link_to_lc = std::string(hc_id_.front(), hc_id_.size()) +
+				std::string link_to_lc = hc_id_ +
 					std::string(data_buffer_.front(), LC_ID_LEN);
 				data_buffer_.erase(data_buffer_.begin(), data_buffer_.begin() + LC_ID_LEN);
 				own_server_->send_message(link_to_lc, data_buffer_);
@@ -85,10 +86,115 @@ int server_connection::process_events(short int polling_events)
 
 	if (recv_result == Net::error_connection_is_closed_)
 	{
-		own_server_->unregister_client(std::string(hc_id_.front(), hc_id_.size()));
+		own_server_->unregister_client(hc_id_);
 		return recv_result;
 	}
 	return Net::error_no_;
+}
+
+///////////////////////////////////////////////////////////////////////////
+
+void server_connection::login_parser::parse(const std::vector<char>& data)
+{
+	if (!is_complete_)
+	{
+		buffer_.insert(buffer_.end(), data.begin(), data.end());
+		buffer_all_data_.insert(buffer_all_data_.end(), data.begin(), data.end());
+
+		if (!got_login_len_)
+		{
+			if (buffer_.size() < login_passwd_crc_len_size)
+			{
+				return;
+			}
+
+			login_len_ = (0x000000FF) | buffer_[0];
+			login_len_ = login_len_ | (0x0000FF00 & (buffer_[1] << 8));
+			login_len_ = login_len_ | (0x00FF0000 & (buffer_[1] << 16));
+			login_len_ = login_len_ | (0xFF000000 & (buffer_[1] << 24));
+
+			buffer_.erase(buffer_.begin(), buffer_.begin() + login_passwd_crc_len_size);
+
+			got_login_len_ = true;
+		}
+
+		if (!got_login_)
+		{
+			if (buffer_.size() < login_len_)
+			{
+				return;
+			}
+
+			login_.insert(login_.end(), buffer_.begin(), buffer_.begin() + login_len_);
+			buffer_.erase(buffer_.begin(), buffer_.begin() + login_len_);
+
+			got_login_ = true;
+		}
+
+		if (!got_passwd_len_)
+		{
+			if (buffer_.size() < login_passwd_crc_len_size)
+			{
+				return;
+			}
+
+			passwd_len_ = (0x000000FF) | buffer_[0];
+			passwd_len_ = passwd_len_ | (0x0000FF00 & (buffer_[1] << 8));
+			passwd_len_ = passwd_len_ | (0x00FF0000 & (buffer_[1] << 16));
+			passwd_len_ = passwd_len_ | (0xFF000000 & (buffer_[1] << 24));
+
+			buffer_.erase(buffer_.begin(), buffer_.begin() + login_passwd_crc_len_size);
+
+			got_passwd_len_ = true;
+		}
+
+		if (!got_passwd_)
+		{
+			if (buffer_.size() < passwd_len_)
+			{
+				return;
+			}
+
+			passwd_.insert(passwd_.end(), buffer_.begin(), buffer_.begin() + passwd_len_);
+			buffer_.erase(buffer_.begin(), buffer_.begin() + passwd_len_);
+
+			got_passwd_ = true;
+		}
+
+		if (!got_crc_)
+		{
+			if (buffer_.size() < login_passwd_crc_len_size)
+			{
+				return;
+			}
+
+			crc_ = (0x000000FF) | buffer_[0];
+			crc_ = crc_ | (0x0000FF00 & (buffer_[1] << 8));
+			crc_ = crc_ | (0x00FF0000 & (buffer_[1] << 16));
+			crc_ = crc_ | (0xFF000000 & (buffer_[1] << 24));
+
+			boost::uint32_t incoming_crc = Crc32((const unsigned char*) &buffer_all_data_[0],
+				buffer_all_data_.size() - login_passwd_crc_len_size);
+
+			got_crc_ = true;
+
+			if (crc_ == incoming_crc)
+			{
+				buffer_.clear();
+				buffer_all_data_.clear();
+
+				is_complete_ = true;
+			}
+			else
+			{
+				got_login_len_ = true;
+				got_login_ = true;
+				got_passwd_len_ = true;
+				got_passwd_ = true;
+				got_crc_ = true;
+			}
+		}
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -141,8 +247,10 @@ int server::process_message(const std::string& link,
 		clients_.find(client_id);
 	if (iter != clients_.end())
 	{
-		Net::send_data(iter->second->get_socket(), (char *) link.substr(USER_ID_LEN).c_str(), LC_ID_LEN);
-		Net::send_data(iter->second->get_socket(), (char *) &data[0], data.size());
+		Net::send_data(iter->second->get_socket(),
+			(char *) link.substr(USER_ID_LEN).c_str(), LC_ID_LEN);
+		Net::send_data(iter->second->get_socket(),
+			(char *) &data[0], data.size());
 	}
 
 	return 0;

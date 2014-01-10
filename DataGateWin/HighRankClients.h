@@ -27,12 +27,54 @@ private:
 		status_logined = 2
 	};
 
+	class login_parser
+	{
+	public:
+		login_parser()
+			: is_complete_(false)
+			, got_login_len_(false)
+			, got_login_(false)
+			, got_passwd_len_(false)
+			, got_passwd_(false)
+			, got_crc_(false)
+		{}
+		~login_parser()
+		{
+			buffer_.clear();
+			buffer_all_data_.clear();
+		}
+
+		bool is_complete() { return is_complete_; }
+		void parse(const std::vector<char>& data);
+
+		std::string get_login() { return login_; }
+		std::string get_passwd() { return passwd_; }
+	private:
+		std::vector<char> buffer_;
+		std::vector<char> buffer_all_data_;
+
+		unsigned int login_len_;
+		std::string login_;
+		unsigned int passwd_len_;
+		std::string passwd_;
+		boost::uint32_t crc_;
+
+		bool is_complete_;
+
+		bool got_login_len_;
+		bool got_login_;
+		bool got_passwd_len_;
+		bool got_passwd_;
+		bool got_crc_;
+	};
+
 private:
-	std::vector<char> hc_id_;
+	std::string hc_id_;
 	status status_;
 	std::vector<char> data_buffer_;
 	data_base *db_;
 	server *own_server_;
+	login_parser login_parser_;
 };
 
 class server : public Net::server, public Net::i_local_communicator
