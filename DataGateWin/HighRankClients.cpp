@@ -77,7 +77,7 @@ int server_connection::process_events(short int polling_events)
 			if (data_buffer_.size() >= LC_ID_LEN)
 			{
 				std::string link_to_lc = hc_id_ +
-					std::string(data_buffer_.front(), LC_ID_LEN);
+					std::string(&data_buffer_[0], LC_ID_LEN);
 				data_buffer_.erase(data_buffer_.begin(), data_buffer_.begin() + LC_ID_LEN);
 				own_server_->send_message(link_to_lc, data_buffer_);
 			}
@@ -251,6 +251,10 @@ int server::process_message(const std::string& link,
 			(char *) link.substr(USER_ID_LEN).c_str(), LC_ID_LEN);
 		Net::send_data(iter->second->get_socket(),
 			(char *) &data[0], data.size());
+	}
+	else
+	{
+		//!fixme save data to DB
 	}
 
 	return 0;

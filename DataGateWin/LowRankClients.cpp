@@ -61,19 +61,16 @@ int server_connection::process_events(short int polling_events)
 
 				hc_id_.insert(hc_id_.begin(), data_buffer_.begin(),
 					data_buffer_.begin() + USER_ID_LEN);
-				lc_id_.insert(lc_id_.begin(), &(data_buffer_[USER_ID_LEN - 1]),
-					&(data_buffer_[USER_ID_LEN - 1]) + LC_ID_LEN);
+				lc_id_.insert(lc_id_.begin(), &(data_buffer_[USER_ID_LEN]),
+					&(data_buffer_[USER_ID_LEN]) + LC_ID_LEN);
 
-				data_buffer_.erase(data_buffer_.begin(),
-					data_buffer_.begin() + LC_LONIG_PACKET_LEN);
-
-				bool is_exist = db_->check_lc_id(std::string(hc_id_.front(), USER_ID_LEN),
-					std::string(lc_id_.front(), LC_ID_LEN));
+				bool is_exist = db_->check_lc_id(std::string(&hc_id_[0], USER_ID_LEN),
+					std::string(&lc_id_[0], LC_ID_LEN));
 
 				if (is_exist)
 				{
-					link_to_hs_ = std::string(hc_id_.front(), hc_id_.size()) +
-						std::string(lc_id_.front(), lc_id_.size());
+					link_to_hs_ = std::string(&hc_id_[0], hc_id_.size()) +
+						std::string(&lc_id_[0], lc_id_.size());
 					local_comm_manager_->create_link(link_to_hs_, this, high_rank_server_);
 					status_ = status_logined;
 
@@ -93,11 +90,7 @@ int server_connection::process_events(short int polling_events)
 		{
 			// send data to HC
 
-			bool send_result = high_rank_server_->send_message(link_to_hs_, data_buffer_);
-			if (!send_result)
-			{
-				//!fixme save data to DB
-			}
+			send_message(link_to_hs_, data_buffer_);
 
 			data_buffer_.clear();
 		}
