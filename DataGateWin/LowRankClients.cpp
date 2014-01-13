@@ -76,6 +76,11 @@ int server_connection::process_events(short int polling_events)
 						std::string(lc_id_.front(), lc_id_.size());
 					local_comm_manager_->create_link(link_to_hs_, this, high_rank_server_);
 					status_ = status_logined;
+
+					Net::send_data(get_socket(), &data_buffer_[0], LC_LONIG_PACKET_LEN);
+
+					data_buffer_.erase(data_buffer_.begin(),
+						data_buffer_.begin() + LC_LONIG_PACKET_LEN);
 				}
 				else
 				{

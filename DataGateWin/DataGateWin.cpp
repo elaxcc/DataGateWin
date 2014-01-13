@@ -1,39 +1,28 @@
 #include "stdafx.h"
 
-#include <conio.h>
-
-#include <iostream>
+#include "LowRankClients.h"
+#include "HighRankClients.h"
+#include "DataBase.h"
 
 int main(int argc, char **argv)
 {
-	PGconn *conn;
-	PGresult *res;
+	Net::init();
 
-	conn = PQconnectdb("dbname=data_gate host=localhost user=postgres password=12345");
-	if (PQstatus(conn) == CONNECTION_BAD)
+	data_base db("data_gate", "localhost", "postgres", "12345");
+	Net::net_manager net_manager;
+	Net::local_communicator_manager local_comm_manager;
+
+	high_rank_clients::server hs(&db, &net_manager, &local_comm_manager, 1234, true, true);
+	low_rank_clients::server ls(&db, &net_manager, &hs, &local_comm_manager, 1235, true, true);
+
+	net_manager.add_member(&hs);
+	net_manager.add_member(&ls);
+
+	while(true)
 	{
-		puts("Не удается подключиться к базе данных");
-		return 0;
+		net_manager.process_sockets();
+		local_comm_manager.process();
 	}
-
-	res = PQexec(conn, "SELECT * FROM low_clients WHERE low_clients.user_id = 'user1' AND low_clients.client_id = 'lc1'");
-
-	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-		puts("Мы не получили данные");
-		return 0;
-	}
-
-	int rec_count = PQntuples(res);
-	for (int i = 0; i < rec_count; ++i)
-	{
-		for (int j = 0; j < 3; ++j)
-		{
-			std::cout << PQgetvalue(res, i, j) << " | ";
-		}
-		std::cout << std::endl;
-	}
-
-	getch();
 
 	return 0;
 }
