@@ -71,6 +71,15 @@ int net_manager::process_sockets()
 		unsigned members_cnt = polling_list_.size();
 		for (unsigned int i = 0; i < members_cnt; ++i)
 		{
+			if (polling_list_[i].revents & POLLHUP && 
+				polling_list_[i].revents & POLLERR)
+			{
+				members_for_delete.push_back(
+					net_members_[i]->get_socket());
+
+				continue;
+			}
+
 			short int member_polling_flags =
 				net_members_[i]->get_polling_flags();
 			if ((member_polling_flags != 0)
