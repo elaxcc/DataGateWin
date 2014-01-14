@@ -68,6 +68,10 @@ int server_connection::process_events(short int polling_events)
 
 				status_ = status_logined;
 				own_server_->register_client(hc_id_, this);
+
+				// send answer
+				Net::send_data(get_socket(), (char *) g_hs_login_answer.c_str(),
+					g_hs_login_answer.size());
 			}
 		}
 		else

@@ -8,6 +8,8 @@
 #define DATA_PACKET_LEN 4
 #define DATA_PACKET_CRC32_LEN 4
 
+const std::string g_hs_login_answer = "urwerhHELLOWdjdn";
+
 /*
   Name  : CRC-32
   Poly  : 0x04C11DB7    x^32 + x^26 + x^23 + x^22 + x^16 + x^12 + x^11 
