@@ -170,7 +170,7 @@ void local_communicator_manager::process()
 		std::map<int, i_local_communicator*>::iterator member_iter =
 			members_.find(destination_id);
 
-		if (member_iter->second)
+		if (member_iter != members_.end() && member_iter->second)
 		{
 			member_iter->second->process_message(
 				messages_[i].link_,	messages_[i].message_);

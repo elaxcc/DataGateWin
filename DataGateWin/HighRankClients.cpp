@@ -20,13 +20,14 @@ server_connection::server_connection(data_base *db, int socket,
 	: Net::connection(socket, Net::c_poll_event_in)
 	, status_(status_not_logined)
 	, db_(db)
-	, own_server_(own_server_)
+	, own_server_(own_server)
 {
 }
 
 server_connection::~server_connection()
 {
 	data_buffer_.clear();
+	own_server_->unregister_client(hc_id_);
 }
 
 int server_connection::process_events(short int polling_events)
@@ -90,7 +91,6 @@ int server_connection::process_events(short int polling_events)
 
 	if (recv_result == Net::error_connection_is_closed_)
 	{
-		own_server_->unregister_client(hc_id_);
 		return recv_result;
 	}
 	return Net::error_no_;
@@ -112,10 +112,10 @@ void server_connection::login_parser::parse(const std::vector<char>& data)
 				return;
 			}
 
-			login_len_ = (0x000000FF) | buffer_[0];
+			login_len_ = 0x000000FF & buffer_[0];
 			login_len_ = login_len_ | (0x0000FF00 & (buffer_[1] << 8));
-			login_len_ = login_len_ | (0x00FF0000 & (buffer_[1] << 16));
-			login_len_ = login_len_ | (0xFF000000 & (buffer_[1] << 24));
+			login_len_ = login_len_ | (0x00FF0000 & (buffer_[2] << 16));
+			login_len_ = login_len_ | (0xFF000000 & (buffer_[3] << 24));
 
 			buffer_.erase(buffer_.begin(), buffer_.begin() + login_passwd_crc_len_size);
 
@@ -142,10 +142,10 @@ void server_connection::login_parser::parse(const std::vector<char>& data)
 				return;
 			}
 
-			passwd_len_ = (0x000000FF) | buffer_[0];
+			passwd_len_ = 0x000000FF & buffer_[0];
 			passwd_len_ = passwd_len_ | (0x0000FF00 & (buffer_[1] << 8));
-			passwd_len_ = passwd_len_ | (0x00FF0000 & (buffer_[1] << 16));
-			passwd_len_ = passwd_len_ | (0xFF000000 & (buffer_[1] << 24));
+			passwd_len_ = passwd_len_ | (0x00FF0000 & (buffer_[2] << 16));
+			passwd_len_ = passwd_len_ | (0xFF000000 & (buffer_[3] << 24));
 
 			buffer_.erase(buffer_.begin(), buffer_.begin() + login_passwd_crc_len_size);
 
@@ -172,10 +172,10 @@ void server_connection::login_parser::parse(const std::vector<char>& data)
 				return;
 			}
 
-			crc_ = (0x000000FF) | buffer_[0];
+			crc_ = 0x000000FF & buffer_[0];
 			crc_ = crc_ | (0x0000FF00 & (buffer_[1] << 8));
-			crc_ = crc_ | (0x00FF0000 & (buffer_[1] << 16));
-			crc_ = crc_ | (0xFF000000 & (buffer_[1] << 24));
+			crc_ = crc_ | (0x00FF0000 & (buffer_[2] << 16));
+			crc_ = crc_ | (0xFF000000 & (buffer_[3] << 24));
 
 			boost::uint32_t incoming_crc = Crc32((const unsigned char*) &buffer_all_data_[0],
 				buffer_all_data_.size() - login_passwd_crc_len_size);
@@ -249,7 +249,7 @@ int server::process_message(const std::string& link,
 	std::string client_id(link.substr(0, USER_ID_LEN));
 	std::map<std::string, server_connection*>::iterator iter =
 		clients_.find(client_id);
-	if (iter != clients_.end())
+	if (iter != clients_.end() && iter->second)
 	{
 		Net::send_data(iter->second->get_socket(),
 			(char *) link.substr(USER_ID_LEN).c_str(), LC_ID_LEN);

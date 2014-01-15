@@ -26,6 +26,8 @@ server_connection::~server_connection()
 	lc_id_.clear();
 	hc_id_.clear();
 	data_buffer_.clear();
+
+	local_comm_manager_->destroy_link(link_to_hs_);
 }
 
 int server_connection::process_events(short int polling_events)
