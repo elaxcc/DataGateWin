@@ -76,3 +76,143 @@ boost::uint32_t Crc32(const unsigned char * buf, unsigned len)
 		crc = (crc >> 8) ^ Crc32Table[(crc ^ *buf++) & 0xFF];
 	return crc ^ 0xFFFFFFFF;
 }
+
+///////////////////////////////////////////////////////////////////////////
+
+hc_to_lc_parser::hc_to_lc_parser()
+	: is_complete_(false)
+	, got_lc_id_(false)
+	, got_data_len_(false)
+	, got_data_(false)
+	, got_crc_(false)
+{
+}
+
+hc_to_lc_parser::~hc_to_lc_parser()
+{
+
+}
+
+void hc_to_lc_parser::parse(std::vector<char> data)
+{
+	buffer_.insert(buffer_.end(), data_.begin(), data_.end());
+	buffer_all_data_.insert(buffer_.end(), data_.begin(), data_.end());
+
+	if (!got_lc_id_)
+	{
+		if (buffer_.size() < LC_ID_LEN)
+		{
+			return;
+		}
+
+		lc_id_.insert(lc_id_.end(), buffer_.begin(),
+			buffer_.begin() + LC_ID_LEN);
+		buffer_.erase(buffer_.begin(), buffer_.begin() + LC_ID_LEN);
+
+		got_lc_id_ = true;
+	}
+
+	if (!got_data_len_)
+	{
+		if (buffer_.size() < sizeof(data_len_))
+		{
+			return;
+		}
+
+		data_len_ = 0x000000FF & buffer_[0];
+		data_len_ = data_len_ | (0x0000FF00 & (buffer_[1] << 8));
+		data_len_ = data_len_ | (0x00FF0000 & (buffer_[2] << 16));
+		data_len_ = data_len_ | (0xFF000000 & (buffer_[3] << 24));
+
+		buffer_.erase(buffer_.begin(),
+			buffer_.begin() + sizeof(data_len_));
+
+		got_data_len_ = true;
+	}
+
+	if (!got_data_)
+	{
+		if (buffer_.size() < data_len_)
+		{
+			return;
+		}
+
+		data_.insert(data_.end(), buffer_.begin(),
+			buffer_.begin() + data_len_);
+		buffer_.erase(buffer_.begin(), buffer_.begin() + data_len_);
+
+		got_data_ = true;
+	}
+
+	if (!got_crc_)
+	{
+		if (buffer_.size() < sizeof(crc_))
+		{
+			return;
+		}
+
+		crc_ = 0x000000FF & buffer_[0];
+		crc_ = crc_ | (0x0000FF00 & (buffer_[1] << 8));
+		crc_ = crc_ | (0x00FF0000 & (buffer_[2] << 16));
+		crc_ = crc_ | (0xFF000000 & (buffer_[3] << 24));
+
+		buffer_.erase(buffer_.begin(),
+			buffer_.begin() + sizeof(crc_));
+
+		got_crc_ = true;
+
+		boost::uint32_t calculated_crc = Crc32((const unsigned char*) &buffer_all_data_[0],
+			buffer_all_data_.size() - sizeof(crc_));
+
+		if (crc_ == calculated_crc)
+		{
+			buffer_.clear();
+			buffer_all_data_.clear();
+
+			is_complete_ = true;
+		}
+		else
+		{
+			flush();
+		}
+	}
+}
+
+void hc_to_lc_parser::reset()
+{
+	buffer_.clear();
+	buffer_all_data_.clear();
+	flush();
+}
+
+void hc_to_lc_parser::flush()
+{
+	is_complete_ = false;
+	got_lc_id_ = false;
+	got_data_len_ = false;
+	got_data_ = false;
+	got_crc_ = false;
+}
+
+void hc_to_lc_parser::prepare_data_for_hs(const std::vector<char>& lc_id_,
+	const std::vector<char>& data, std::vector<char>& out_buffer)
+{
+	out_buffer.insert(out_buffer.end(), lc_id_.begin(), lc_id_.end());
+
+	unsigned data_len = data.size();
+	for (int i = 0; i < sizeof(data_len_); ++i)
+	{
+		char tmp = (char) (data_len >> (8 * i));
+		out_buffer.push_back(tmp);
+	}
+
+	out_buffer.insert(out_buffer.end(), data.begin(), data.end());
+
+	unsigned crc = Crc32((const unsigned char*) &out_buffer[0],
+		out_buffer.size());
+	for (int i = 0; i < sizeof(crc_); ++i)
+	{
+		char tmp = (char) (crc >> (8 * i));
+		out_buffer.push_back(tmp);
+	} 
+}

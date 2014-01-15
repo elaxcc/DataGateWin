@@ -177,12 +177,12 @@ void server_connection::login_parser::parse(const std::vector<char>& data)
 			crc_ = crc_ | (0x00FF0000 & (buffer_[2] << 16));
 			crc_ = crc_ | (0xFF000000 & (buffer_[3] << 24));
 
-			boost::uint32_t incoming_crc = Crc32((const unsigned char*) &buffer_all_data_[0],
+			boost::uint32_t calculated_crc = Crc32((const unsigned char*) &buffer_all_data_[0],
 				buffer_all_data_.size() - login_passwd_crc_len_size);
 
 			got_crc_ = true;
 
-			if (crc_ == incoming_crc)
+			if (crc_ == calculated_crc)
 			{
 				buffer_.clear();
 				buffer_all_data_.clear();

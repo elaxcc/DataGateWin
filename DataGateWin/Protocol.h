@@ -23,4 +23,38 @@ const std::string g_hs_login_answer = "urwerhHELLOWdjdn";
 */
 boost::uint32_t Crc32(const unsigned char *buf, unsigned len);
 
+class hc_to_lc_parser
+{
+public:
+	hc_to_lc_parser();
+	~hc_to_lc_parser();
+
+	bool is_complete() { return is_complete_; }
+	void parse(std::vector<char> data);
+	void reset();
+	void flush();
+
+	const std::vector<char>& get_lc_id() { return lc_id_; }
+	const std::vector<char>& get_data() { return data_; }
+
+	void prepare_data_for_hs(const std::vector<char>& lc_id_,
+		const std::vector<char>& data, std::vector<char>& out_buffer);
+
+private:
+	bool is_complete_;
+
+	std::vector<char> lc_id_;
+	unsigned int data_len_;
+	std::vector<char> data_;
+	unsigned int crc_;
+
+	bool got_lc_id_;
+	bool got_data_len_;
+	bool got_data_;
+	bool got_crc_;
+
+	std::vector<char> buffer_;
+	std::vector<char> buffer_all_data_;
+};
+
 #endif // _PROTOCOL_H_
