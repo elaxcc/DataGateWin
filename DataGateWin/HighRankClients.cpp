@@ -81,10 +81,22 @@ int server_connection::process_events(short int polling_events)
 			
 			if (data_buffer_.size() >= LC_ID_LEN)
 			{
-				std::string link_to_lc = hc_id_ +
-					std::string(&data_buffer_[0], LC_ID_LEN);
-				data_buffer_.erase(data_buffer_.begin(), data_buffer_.begin() + LC_ID_LEN);
-				own_server_->send_message(link_to_lc, data_buffer_);
+				hc_to_lc_parser_.parse(data_buffer_);
+				data_buffer_.clear();
+
+				if (hc_to_lc_parser_.is_complete() && 
+					!hc_to_lc_parser_.is_bad_packet())
+				{
+
+					const std::vector<char>& incoming_lc_id =
+						hc_to_lc_parser_.get_lc_id();
+					std::string link_to_lc = hc_id_ +
+						std::string(&incoming_lc_id[0], + incoming_lc_id.size());
+
+					own_server_->send_message(link_to_lc, 
+						hc_to_lc_parser_.get_data());
+				}
+				hc_to_lc_parser_.flush();
 			}
 		}
 	}
@@ -249,16 +261,14 @@ int server::process_message(const std::string& link,
 	std::string client_id(link.substr(0, USER_ID_LEN));
 	std::map<std::string, server_connection*>::iterator iter =
 		clients_.find(client_id);
-	if (iter != clients_.end() && iter->second)
+	if (iter != clients_.end() && iter->second && iter->second->is_logined())
 	{
-		Net::send_data(iter->second->get_socket(),
-			(char *) link.substr(USER_ID_LEN).c_str(), LC_ID_LEN);
-		Net::send_data(iter->second->get_socket(),
-			(char *) &data[0], data.size());
+		Net::send_data(iter->second->get_socket(), (char *) &data[0], data.size());
 	}
 	else
 	{
 		//!fixme save data to DB
+		//!fixme do something if not logined
 	}
 
 	return 0;

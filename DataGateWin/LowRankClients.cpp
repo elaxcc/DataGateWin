@@ -92,8 +92,10 @@ int server_connection::process_events(short int polling_events)
 		{
 			// send data to HC
 
-			send_message(link_to_hs_, data_buffer_);
-
+			std::vector<char> out_buffer;
+			hc_to_lc_parser::prepare_data_for_hs(lc_id_, data_buffer_, out_buffer);
+			send_message(link_to_hs_, out_buffer);
+			out_buffer.clear();
 			data_buffer_.clear();
 		}
 	}
@@ -109,7 +111,15 @@ int server_connection::process_events(short int polling_events)
 int server_connection::process_message(const std::string& link,
 	const std::vector<char>& data)
 {
-	int send_result = Net::send_data(get_socket(), (char *) &data[0], data.size());
+	if (status_ == status_logined)
+	{
+		int send_result = Net::send_data(get_socket(), (char *) &data[0], data.size());
+	}
+	else
+	{
+		//!fixme do something if not logined
+	}
+	
 	return 0;
 }
 

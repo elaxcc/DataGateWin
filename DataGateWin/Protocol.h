@@ -30,6 +30,7 @@ public:
 	~hc_to_lc_parser();
 
 	bool is_complete() { return is_complete_; }
+	bool is_bad_packet() { return is_bad_packet_; }
 	void parse(std::vector<char> data);
 	void reset();
 	void flush();
@@ -37,11 +38,12 @@ public:
 	const std::vector<char>& get_lc_id() { return lc_id_; }
 	const std::vector<char>& get_data() { return data_; }
 
-	void prepare_data_for_hs(const std::vector<char>& lc_id_,
+	static void prepare_data_for_hs(const std::vector<char>& lc_id_,
 		const std::vector<char>& data, std::vector<char>& out_buffer);
 
 private:
 	bool is_complete_;
+	bool is_bad_packet_;
 
 	std::vector<char> lc_id_;
 	unsigned int data_len_;

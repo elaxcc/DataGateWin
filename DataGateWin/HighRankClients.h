@@ -3,6 +3,7 @@
 
 #include "NetCommon.h"
 #include "LocalCommunication.h"
+#include "Protocol.h"
 
 class data_base;
 
@@ -16,6 +17,8 @@ class server_connection : public Net::connection
 public:
 	server_connection(data_base *db, int socket, server *own_server);
 	~server_connection();
+
+	bool is_logined() { return status_ == status_logined; }
 
 public: // Net::connection
 	virtual int process_events(short int polling_events);
@@ -75,6 +78,7 @@ private:
 	data_base *db_;
 	server *own_server_;
 	login_parser login_parser_;
+	hc_to_lc_parser hc_to_lc_parser_;
 };
 
 class server : public Net::server, public Net::i_local_communicator
