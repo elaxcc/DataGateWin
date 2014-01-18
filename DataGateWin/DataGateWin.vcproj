@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../DataGateCommon/DataGateCommon;../../NetSocket/NetSocket;&quot;C:\Program Files\PostgreSQL\9.3\include&quot;;../../boost"
+				AdditionalIncludeDirectories="../../Software/Software;../../DataGateCommon/DataGateCommon;../../NetSocket/NetSocket;&quot;C:\Program Files\PostgreSQL\9.3\include&quot;;../../boost"
 				AdditionalUsingDirectories=""
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
@@ -62,9 +62,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libpq.lib NetSocket.lib DataGateCommon.lib"
+				AdditionalDependencies="libpq.lib NetSocket.lib DataGateCommon.lib Software.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="../../DataGateCommon/Debug;../../NetSocket/Debug;&quot;C:\Program Files\PostgreSQL\9.3\lib&quot;;&quot;C:\Program Files\PostgreSQL\9.3\bin&quot;;../../boost/stage/lib"
+				AdditionalLibraryDirectories="../../Software/Debug;../../DataGateCommon/Debug;../../NetSocket/Debug;&quot;C:\Program Files\PostgreSQL\9.3\lib&quot;;&quot;C:\Program Files\PostgreSQL\9.3\bin&quot;;../../boost/stage/lib"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -118,7 +118,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="../../DataGateCommon/DataGateCommon;../../NetSocket/NetSocket;../../boost;&quot;C:\Program Files\PostgreSQL\9.3\include&quot;"
+				AdditionalIncludeDirectories="../../Software/Software;../../DataGateCommon/DataGateCommon;../../NetSocket/NetSocket;../../boost;&quot;C:\Program Files\PostgreSQL\9.3\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -137,9 +137,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libpq.lib NetSocket.lib DataGateCommon.lib"
+				AdditionalDependencies="libpq.lib NetSocket.lib DataGateCommon.lib Software.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="../../DataGateCommon/Release;../../NetSocket/Release;&quot;C:\Program Files\PostgreSQL\9.3\lib&quot;;&quot;C:\Program Files\PostgreSQL\9.3\bin&quot;;../../boost/stage/lib"
+				AdditionalLibraryDirectories="../../Software/Release;../../DataGateCommon/Release;../../NetSocket/Release;&quot;C:\Program Files\PostgreSQL\9.3\lib&quot;;&quot;C:\Program Files\PostgreSQL\9.3\bin&quot;;../../boost/stage/lib"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -213,10 +213,6 @@
 					/>
 				</FileConfiguration>
 			</File>
-			<File
-				RelativePath=".\StringService.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -237,10 +233,6 @@
 			</File>
 			<File
 				RelativePath=".\stdafx.h"
-				>
-			</File>
-			<File
-				RelativePath=".\StringService.h"
 				>
 			</File>
 			<File
