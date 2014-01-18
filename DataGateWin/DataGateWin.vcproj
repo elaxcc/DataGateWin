@@ -19,7 +19,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(SolutionDir)$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="1"
 			>
@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;C:\Program Files\PostgreSQL\9.3\include&quot;;D:\ProjectsGit\boost"
+				AdditionalIncludeDirectories="../../NetSocket/NetSocket;&quot;C:\Program Files\PostgreSQL\9.3\include&quot;;../../boost"
 				AdditionalUsingDirectories=""
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
@@ -62,9 +62,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libpq.lib"
+				AdditionalDependencies="libpq.lib NetSocket.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;C:\Program Files\PostgreSQL\9.3\lib&quot;;&quot;C:\Program Files\PostgreSQL\9.3\bin&quot;;D:\ProjectsGit\boost\stage\lib"
+				AdditionalLibraryDirectories="../../NetSocket/Debug;&quot;C:\Program Files\PostgreSQL\9.3\lib&quot;;&quot;C:\Program Files\PostgreSQL\9.3\bin&quot;;../../boost/stage/lib"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -94,7 +94,7 @@
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(SolutionDir)$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
@@ -118,6 +118,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories="../../NetSocket/NetSocket;../../boost;&quot;C:\Program Files\PostgreSQL\9.3\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -136,7 +137,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="libpq.lib NetSocket.lib"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="../../NetSocket/Release;&quot;C:\Program Files\PostgreSQL\9.3\lib&quot;;&quot;C:\Program Files\PostgreSQL\9.3\bin&quot;;../../boost/stage/lib"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -187,19 +190,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\LocalCommunication.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\LowRankClients.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\NetCommon.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\NetManager.cpp"
 				>
 			</File>
 			<File
@@ -230,14 +221,6 @@
 				RelativePath=".\StringService.cpp"
 				>
 			</File>
-			<File
-				RelativePath=".\ThreadWithStop.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Timer.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -253,19 +236,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\LocalCommunication.h"
-				>
-			</File>
-			<File
 				RelativePath=".\LowRankClients.h"
-				>
-			</File>
-			<File
-				RelativePath=".\NetCommon.h"
-				>
-			</File>
-			<File
-				RelativePath=".\NetManager.h"
 				>
 			</File>
 			<File
@@ -282,14 +253,6 @@
 			</File>
 			<File
 				RelativePath=".\targetver.h"
-				>
-			</File>
-			<File
-				RelativePath=".\ThreadWithStop.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Timer.h"
 				>
 			</File>
 		</Filter>
