@@ -23,6 +23,7 @@ const std::string query_check_user_id =
 	"SELECT * "
 	"FROM users "
 	"WHERE users.user_id = '{checked_user_id}'";
+
 const std::string query_check_low_rank_client =
 	"SELECT * "
 	"FROM low_clients "
